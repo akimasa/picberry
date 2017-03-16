@@ -279,8 +279,12 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 	send_cmd(COMM_LOAD_CONFIG, DELAY_TDLY);
 	write_data(0x00);
 
-	for(addr = 0x2000; addr < 0x2007; addr++){
+	addr = 0x2000;
+	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826))
+		addr = 0x8000;
+	for(int i = 0; i < 7; i++){
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+		addr++;
 	}
 	/* Config Word 1 */
 	send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
@@ -399,8 +403,12 @@ void pic10f322::write(char *infile)
 	send_cmd(COMM_LOAD_CONFIG, DELAY_TDLY);
 	write_data(0x00);
 
-	for(addr = 0x2000; addr < 0x2007; addr++){
+	addr = 0x2000;
+	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826))
+		addr = 0x8000;
+	for(i = 0; i < 7; i++){
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+		addr++;
 	}
 	if(mem.filled[addr]){
 		send_cmd(COMM_LOAD_FOR_PROG, DELAY_TDLY);
@@ -454,8 +462,12 @@ void pic10f322::write(char *infile)
 		send_cmd(COMM_LOAD_CONFIG, DELAY_TDLY);
 		write_data(0x00);
 
-		for(addr = 0x2000; addr < 0x2007; addr++){
+		addr = 0x2000;
+		if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826))
+			addr = 0x8000;
+		for(int i = 0; i < 7; i++){
 			send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+			addr++;
 		}
 
 		send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
@@ -463,11 +475,15 @@ void pic10f322::write(char *infile)
 		/* NOTE: It is impossible to program LVP bit when Low-Voltage Programming.
 		 * We will ignore LVP bit in Configuration Fuse by using 0x3EFF mask.
 		 */
-		data = read_data() & 0x3EFF;
-		fileconf = mem.location[addr] & 0x3EFF;
+		uint16_t mask = 0x3FFF;
+		if(subfamily == SF_PIC10F322)
+			mask = 0x3EFF;
+
+		data = read_data() & mask;
+		fileconf = mem.location[addr] & mask;
 		if ( ( data != fileconf ) & ( mem.filled[addr] ) ) {
 			fprintf(stderr, "Error at addr = 0x%06X:  pic = 0x%04X, file = 0x%04X.\nExiting...",
-					addr, data, mem.location[addr] & 0x3EFF);
+					addr, data, mem.location[addr] & mask);
 			return;
 		}
 
@@ -482,6 +498,8 @@ void pic10f322::write(char *infile)
 				mask = 0x3703;
 			else if(subfamily == SF_PIC16LF1826)
 				mask = 0x3713;
+			/* Ignore LVP bit. */
+			mask &= ~(1 << 13);
 			data = read_data() & mask;
 			fileconf = mem.location[addr] & mask;
 			if ( ( data != fileconf ) & ( mem.filled[addr] ) ) {
