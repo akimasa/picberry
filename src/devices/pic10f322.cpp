@@ -224,6 +224,7 @@ uint8_t pic10f322::blank_check(void)
 			fprintf(stderr, "\b\b\b\b\b[%2d%%]", lcounter);
 		}
 	}
+	//TODO: Implement configuration fuse check.
 
 	if(!flags.debug) cerr << "\b\b\b\b\b";
 
@@ -281,7 +282,7 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 	for(addr = 0x2000; addr < 0x2007; addr++){
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 	}
-
+	/* Config Word 1 */
 	send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
 
 	data = read_data() & 0x3FFF;
@@ -292,6 +293,27 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 	if (data != 0x3FFF) {
 		mem.location[addr]        = data;
 		mem.filled[addr]      = 1;
+	}
+	/* Config Word 2 */
+	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+		uint16_t mask = 0x3FFF;
+		addr++;
+		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+		send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
+		
+		if(subfamily == SF_PIC12F1822)
+			mask = 0x3703;
+		else if(subfamily == SF_PIC16LF1826)
+			mask = 0x3713;
+		data = read_data() & mask;
+
+		if (flags.debug)
+			fprintf(stderr, "  addr = 0x%04X  data = 0x%04X\n", addr*2, data);
+
+		if (data != mask) {
+			mem.location[addr]        = data;
+			mem.filled[addr]      = 1;
+		}
 	}
 
 	if(!flags.debug) cerr << "\b\b\b\b\b";
@@ -374,17 +396,28 @@ void pic10f322::write(char *infile)
 	/* Write Confuguration Fuses
 	 * Writing User ID is not implemented.
 	 */
-	if(mem.filled[0x2007]){
-		send_cmd(COMM_LOAD_CONFIG, DELAY_TDLY);
-		write_data(0x00);
+	send_cmd(COMM_LOAD_CONFIG, DELAY_TDLY);
+	write_data(0x00);
 
-		for(addr = 0x2000; addr < 0x2007; addr++){
-			send_cmd(COMM_INC_ADDR, DELAY_TDLY);
-		}
+	for(addr = 0x2000; addr < 0x2007; addr++){
+		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+	}
+	if(mem.filled[addr]){
 		send_cmd(COMM_LOAD_FOR_PROG, DELAY_TDLY);
-		write_data(mem.location[0x2007]);
+		write_data(mem.location[addr]);
 
 		send_cmd(COMM_BEGIN_IN_TIMED_PROG, DELAY_TPINT_CONF);
+	}
+
+	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+		addr++;
+		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+		if(mem.filled[addr]){
+			send_cmd(COMM_LOAD_FOR_PROG, DELAY_TDLY);
+			write_data(mem.location[addr]);
+
+			send_cmd(COMM_BEGIN_IN_TIMED_PROG, DELAY_TPINT_CONF);
+		}
 	}
 	/* Verify Code Memory and Configuration Word */
 	if(!flags.noverify){
@@ -431,11 +464,31 @@ void pic10f322::write(char *infile)
 		 * We will ignore LVP bit in Configuration Fuse by using 0x3EFF mask.
 		 */
 		data = read_data() & 0x3EFF;
-		fileconf = mem.location[0x2007] & 0x3EFF;
-		if ( ( data != fileconf ) & ( mem.filled[0x2007] ) ) {
+		fileconf = mem.location[addr] & 0x3EFF;
+		if ( ( data != fileconf ) & ( mem.filled[addr] ) ) {
 			fprintf(stderr, "Error at addr = 0x%06X:  pic = 0x%04X, file = 0x%04X.\nExiting...",
 					addr, data, mem.location[addr] & 0x3EFF);
 			return;
+		}
+
+		/* Config Word 2 */
+		if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+			uint16_t mask = 0x3FFF;
+			addr++;
+			send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+			send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
+			
+			if(subfamily == SF_PIC12F1822)
+				mask = 0x3703;
+			else if(subfamily == SF_PIC16LF1826)
+				mask = 0x3713;
+			data = read_data() & mask;
+			fileconf = mem.location[addr] & mask;
+			if ( ( data != fileconf ) & ( mem.filled[addr] ) ) {
+				fprintf(stderr, "Error at addr = 0x%06X:  pic = 0x%04X, file = 0x%04X.\nExiting...",
+						addr, data & mask, mem.location[addr] & mask);
+				return;
+			}
 		}
 
 		if(!flags.debug) cerr << "\b\b\b\b\b";

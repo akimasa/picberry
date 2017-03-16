@@ -25,10 +25,16 @@
 
 using namespace std;
 
+#define SF_PIC10F322		0x00
+#define SF_PIC12F1822		0x01
+#define SF_PIC16LF1826		0x02
+
 class pic10f322: public Pic{
 
 	public:
-
+		pic10f322(uint8_t sf){
+			subfamily=sf;
+		};
 		void enter_program_mode(void);
 		void exit_program_mode(void);
 		bool setup_pe(void){return true;};
@@ -49,8 +55,24 @@ class pic10f322: public Pic{
 		* DEVICES SECTION
 		*                    	ID       NAME           MEMSIZE
 		*/
-		pic_device piclist[4] = {{0x14D,  "PIC10F320", 0x100},
+		pic_device piclist[19] = {{0x14D,  "PIC10F320", 0x100},
 								{0x14C,  "PIC10F322", 0x200},
 								{0x14F,  "PIC10LF320", 0x100},
-								{0x14E,  "PIC10LF322", 0x200}};
+								{0x13C,  "PIC16F1826", 0x800},
+								{0x13D,  "PIC16F1827", 0x1000},
+								{0x144,  "PIC16LF1826", 0x800},
+								{0x145,  "PIC16LF1827", 0x1000},
+								{0x139,  "PIC16F1823", 0x800},
+								{0x141,  "PICLF1823", 0x800},
+								{0x138,  "PIC12F1822", 0x800},
+								{0x140,  "PIC12LF1822", 0x800},
+								{0x13A,  "PIC16F1824", 0x1000},
+								{0x142,  "PIC16LF1824", 0x1000},
+								{0x13B,  "PIC16F1825", 0x2000},
+								{0x143,  "PIC16LF1825", 0x2000},
+								{0x13E,  "PIC16F1828", 0x1000},
+								{0x146,  "PIC16LF1828", 0x1000},
+								{0x13F,  "PIC16F1829", 0x2000},
+								{0x147,  "PIC16LF1829", 0x2000}
+								};
 };

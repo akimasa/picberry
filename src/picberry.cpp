@@ -237,7 +237,11 @@ int main(int argc, char *argv[])
         else if(strcmp(family,"pic24fj") == 0)
             pic = new dspic33e(SF_PIC24FJ);
         else if(strcmp(family,"pic10f322") == 0)
-            pic = new pic10f322();
+            pic = new pic10f322(SF_PIC10F322);
+        else if(strcmp(family,"pic12f1822") == 0)
+            pic = new pic10f322(SF_PIC12F1822);
+        else if(strcmp(family,"pic16lf1826") == 0)
+            pic = new pic10f322(SF_PIC16LF1826);
         else if(strcmp(family,"pic18fj") == 0)
             pic = new pic18fj();
         else if(strcmp(family,"pic24fjxxxga0xx") == 0)
