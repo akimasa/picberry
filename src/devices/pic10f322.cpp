@@ -332,9 +332,8 @@ void pic10f322::write(char *infile)
 	int i;
 	uint16_t data, fileconf;
 	uint32_t addr = 0x00000000;
-	unsigned int filled_locations=1;
 
-	filled_locations = read_inhx(infile, &mem);
+	read_inhx(infile, &mem);
 
 	bulk_erase();
 
@@ -385,8 +384,8 @@ void pic10f322::write(char *infile)
 
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 
-		if(lcounter != addr*100/filled_locations){
-			lcounter = addr*100/filled_locations;
+		if(lcounter != addr*100/mem.code_memory_size){
+			lcounter = addr*100/mem.code_memory_size;
 			if(flags.client)
 				fprintf(stdout,"@%03d", lcounter);
 			if(!flags.debug)
@@ -449,8 +448,8 @@ void pic10f322::write(char *infile)
 						addr, data, mem.location[addr]);
 				return;
 			}
-			if(lcounter != addr*100/filled_locations){
-				lcounter = addr*100/filled_locations;
+			if(lcounter != addr*100/mem.code_memory_size){
+				lcounter = addr*100/mem.code_memory_size;
 				if(flags.client)
 					fprintf(stdout,"@%03d", lcounter);
 				if(!flags.debug)
