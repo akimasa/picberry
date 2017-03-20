@@ -214,7 +214,7 @@ uint8_t pic10f322::blank_check(void)
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 
 		if(data != 0x3FFF) {
-			fprintf(stderr, "Chip not Blank! Address: 0x%d, Read: 0x%x.\n",  addr*2, data);
+			fprintf(stderr, "Chip not Blank! Address: 0x%d, Read: 0x%x.\n",  addr, data);
 			ret = 1;
 			break;
 		}
@@ -260,7 +260,7 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 
 		if (flags.debug)
-			fprintf(stderr, "  addr = 0x%04X  data = 0x%04X\n", addr*2, data);
+			fprintf(stderr, "  addr = 0x%04X  data = 0x%04X\n", addr, data);
 
 		if (data != 0x3FFF) {
 			mem.location[addr]        = data;
@@ -292,7 +292,7 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 	data = read_data() & 0x3FFF;
 
 	if (flags.debug)
-		fprintf(stderr, "  addr = 0x%04X  data = 0x%04X\n", addr*2, data);
+		fprintf(stderr, "  addr = 0x%04X  data = 0x%04X\n", addr, data);
 
 	if (data != 0x3FFF) {
 		mem.location[addr]        = data;
@@ -312,7 +312,7 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 		data = read_data() & mask;
 
 		if (flags.debug)
-			fprintf(stderr, "  addr = 0x%04X  data = 0x%04X\n", addr*2, data);
+			fprintf(stderr, "  addr = 0x%04X  data = 0x%04X\n", addr, data);
 
 		if (data != mask) {
 			mem.location[addr]        = data;
