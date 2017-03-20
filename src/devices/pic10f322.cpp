@@ -528,5 +528,10 @@ void pic10f322::dump_configuration_registers(void)
 	}
 	send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
 	cout << "Configuration Words:" << endl;
-	fprintf(stdout, " - CONFIG1 = 0x%2x.\n", (read_data() & 0x1ff));
+	fprintf(stdout, " - CONFIG1 = 0x%2x.\n", (read_data() & 0x3FFF));
+	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
+		send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
+		fprintf(stdout, " - CONFIG2 = 0x%2x.\n", (read_data() & 0x3FFF));
+	}
 }
