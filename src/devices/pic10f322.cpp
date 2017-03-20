@@ -165,7 +165,7 @@ void pic10f322::reset_mem_location(void)
 bool pic10f322::read_device_id(void)
 {
 	uint16_t id;
-	bool found = 0;
+	bool found = 0, found2 = 0;
 
 	send_cmd(COMM_LOAD_CONFIG, DELAY_TDLY);
 	write_data(0x00);
@@ -191,7 +191,16 @@ bool pic10f322::read_device_id(void)
 			break;
 		}
 	}
-	return found;
+	for (unsigned short i=0;i < sizeof(detailed_subfamily_table)/sizeof(detailed_subfamily_table[0]);i++){
+
+		if (detailed_subfamily_table[i].device_id == device_id){
+			detailed_subfamily = detailed_subfamily_table[i].detailed_subfamily;
+			latch_size = detailed_subfamily_table[i].latch_size;
+			found2 = 1;
+			break;
+		}
+	}
+	return found & found2;
 
 }
 
@@ -280,7 +289,7 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 	write_data(0x00);
 
 	addr = 0x2000;
-	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826))
+	if((detailed_subfamily == SF_PIC12F1822) || (detailed_subfamily == SF_PIC16LF1826))
 		addr = 0x8000;
 	for(int i = 0; i < 7; i++){
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
@@ -299,15 +308,15 @@ void pic10f322::read(char *outfile, uint32_t start, uint32_t count)
 		mem.filled[addr]      = 1;
 	}
 	/* Config Word 2 */
-	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+	if((detailed_subfamily == SF_PIC12F1822) || (detailed_subfamily == SF_PIC16LF1826)){
 		uint16_t mask = 0x3FFF;
 		addr++;
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 		send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
 		
-		if(subfamily == SF_PIC12F1822)
+		if(detailed_subfamily == SF_PIC12F1822)
 			mask = 0x3703;
-		else if(subfamily == SF_PIC16LF1826)
+		else if(detailed_subfamily == SF_PIC16LF1826)
 			mask = 0x3713;
 		data = read_data() & mask;
 
@@ -343,12 +352,12 @@ void pic10f322::write(char *infile)
 
 	reset_mem_location();
 
-	for (addr = 0; addr < mem.code_memory_size; addr += 16){        /* address in WORDS (2 Bytes) */
+	for (addr = 0; addr < mem.code_memory_size; addr += latch_size){        /* address in WORDS (2 Bytes) */
 
 
 		if (flags.debug)
 			fprintf(stderr, "Current address 0x%08X \n", addr);
-		for(i=0; i<15; i++){		                        /* write the first 62 bytes */
+		for(i=0; i<latch_size-1; i++){		                        /* write the first 62 bytes */
 			if (mem.filled[addr+i]) {
 				if (flags.debug)
 					fprintf(stderr, "  Writing 0x%04X to address 0x%06X \n", mem.location[addr + i], (addr+i) );
@@ -365,15 +374,15 @@ void pic10f322::write(char *infile)
 		}
 
 		/* write the last 2 bytes and start programming */
-		if (mem.filled[addr+15]) {
+		if (mem.filled[addr+latch_size-1]) {
 			if (flags.debug)
-				fprintf(stderr, "  Writing 0x%04X to address 0x%06X and then start programming...\n", mem.location[addr+15], (addr+15));
+				fprintf(stderr, "  Writing 0x%04X to address 0x%06X and then start programming...\n", mem.location[addr+latch_size-1], (addr+latch_size-1));
 			send_cmd(COMM_LOAD_FOR_PROG, DELAY_TDLY);
-			write_data(mem.location[addr+15]);
+			write_data(mem.location[addr+latch_size-1]);
 		}
 		else {
 			if (flags.debug)
-				fprintf(stderr, "  Writing 0x3FFF to address 0x%06X and then start programming...\n", (addr+15));
+				fprintf(stderr, "  Writing 0x3FFF to address 0x%06X and then start programming...\n", (addr+latch_size-1));
 			send_cmd(COMM_LOAD_FOR_PROG, DELAY_TDLY);
 			write_data(0x3FFF);			         /* write 0x3FFF in empty locations */
 		};
@@ -403,7 +412,7 @@ void pic10f322::write(char *infile)
 	write_data(0x00);
 
 	addr = 0x2000;
-	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826))
+	if((detailed_subfamily == SF_PIC12F1822) || (detailed_subfamily == SF_PIC16LF1826))
 		addr = 0x8000;
 	for(i = 0; i < 7; i++){
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
@@ -416,7 +425,7 @@ void pic10f322::write(char *infile)
 		send_cmd(COMM_BEGIN_IN_TIMED_PROG, DELAY_TPINT_CONF);
 	}
 
-	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+	if((detailed_subfamily == SF_PIC12F1822) || (detailed_subfamily == SF_PIC16LF1826)){
 		addr++;
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 		if(mem.filled[addr]){
@@ -462,7 +471,7 @@ void pic10f322::write(char *infile)
 		write_data(0x00);
 
 		addr = 0x2000;
-		if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826))
+		if((detailed_subfamily == SF_PIC12F1822) || (detailed_subfamily == SF_PIC16LF1826))
 			addr = 0x8000;
 		for(int i = 0; i < 7; i++){
 			send_cmd(COMM_INC_ADDR, DELAY_TDLY);
@@ -475,7 +484,7 @@ void pic10f322::write(char *infile)
 		 * We will ignore LVP bit in Configuration Fuse by using 0x3EFF mask.
 		 */
 		uint16_t mask = 0x3FFF;
-		if(subfamily == SF_PIC10F322)
+		if(detailed_subfamily == SF_PIC10F322)
 			mask = 0x3EFF;
 
 		data = read_data() & mask;
@@ -487,15 +496,15 @@ void pic10f322::write(char *infile)
 		}
 
 		/* Config Word 2 */
-		if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+		if((detailed_subfamily == SF_PIC12F1822) || (detailed_subfamily == SF_PIC16LF1826)){
 			uint16_t mask = 0x3FFF;
 			addr++;
 			send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 			send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
 			
-			if(subfamily == SF_PIC12F1822)
+			if(detailed_subfamily == SF_PIC12F1822)
 				mask = 0x3703;
-			else if(subfamily == SF_PIC16LF1826)
+			else if(detailed_subfamily == SF_PIC16LF1826)
 				mask = 0x3713;
 			/* Ignore LVP bit. */
 			mask &= ~(1 << 13);
@@ -529,7 +538,7 @@ void pic10f322::dump_configuration_registers(void)
 	send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
 	cout << "Configuration Words:" << endl;
 	fprintf(stdout, " - CONFIG1 = 0x%2x.\n", (read_data() & 0x3FFF));
-	if((subfamily == SF_PIC12F1822) || (subfamily == SF_PIC16LF1826)){
+	if((detailed_subfamily == SF_PIC12F1822) || (detailed_subfamily == SF_PIC16LF1826)){
 		send_cmd(COMM_INC_ADDR, DELAY_TDLY);
 		send_cmd(COMM_READ_FROM_PROG, DELAY_TDLY);
 		fprintf(stdout, " - CONFIG2 = 0x%2x.\n", (read_data() & 0x3FFF));

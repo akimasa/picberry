@@ -29,11 +29,19 @@ using namespace std;
 #define SF_PIC12F1822		0x01
 #define SF_PIC16LF1826		0x02
 
+struct detailed_subfamily_t{
+	uint32_t    device_id;
+	uint8_t		detailed_subfamily;
+	uint8_t		latch_size;
+};
+
 class pic10f322: public Pic{
 
 	public:
-		pic10f322(uint8_t sf){
-			subfamily=sf;
+		uint8_t detailed_subfamily;
+		uint8_t	latch_size;
+		pic10f322(void){
+			latch_size = 0;
 		};
 		void enter_program_mode(void);
 		void exit_program_mode(void);
@@ -74,5 +82,26 @@ class pic10f322: public Pic{
 								{0x146,  "PIC16LF1828", 0x1000},
 								{0x13F,  "PIC16F1829", 0x2000},
 								{0x147,  "PIC16LF1829", 0x2000}
+								};
+		detailed_subfamily_t detailed_subfamily_table[19] = {
+								{0x14D,SF_PIC10F322,	16},	//PIC10F320
+								{0x14C,SF_PIC10F322,	16},	//PIC10F322
+								{0x14F,SF_PIC10F322,	16},	//PIC10LF320
+								{0x13C,SF_PIC12F1822,	8},	//PIC16F1826
+								{0x13D,SF_PIC12F1822,	8},	//PIC16F1827
+								{0x144,SF_PIC16LF1826,	8},	//PIC16LF1826
+								{0x145,SF_PIC16LF1826,	8},	//PIC16LF1827
+								{0x139,SF_PIC12F1822,	16},	//PIC16F1823
+								{0x141,SF_PIC12F1822,	16},	//PICLF1823
+								{0x138,SF_PIC12F1822,	16},	//PIC12F1822
+								{0x140,SF_PIC12F1822,	16},	//PIC12LF1822
+								{0x13A,SF_PIC12F1822,	32},	//PIC16F1824
+								{0x142,SF_PIC12F1822,	32},	//PIC16LF1824
+								{0x13B,SF_PIC12F1822,	32},	//PIC16F1825
+								{0x143,SF_PIC12F1822,	32},	//PIC16LF1825
+								{0x13E,SF_PIC12F1822,	32},	//PIC16F1828
+								{0x146,SF_PIC12F1822,	32},	//PIC16LF1828
+								{0x13F,SF_PIC12F1822,	32},	//PIC16F1829
+								{0x147,SF_PIC12F1822,	32}	//PIC16LF1829
 								};
 };
