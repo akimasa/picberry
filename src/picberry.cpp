@@ -437,6 +437,7 @@ void usage(void)
 "   Available PIC families:" << endl << endl <<
 "       dspic33e    " << endl <<
 "       dspic33f    " << endl <<
+"       pic10f322   " << endl <<
 "       pic18fj     " << endl <<
 "       pic24fj     " << endl <<
 "       pic24fjxxxga0xx " << endl <<
